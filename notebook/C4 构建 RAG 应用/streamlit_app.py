@@ -1,3 +1,4 @@
+from dotenv import load_dotenv, find_dotenv
 import streamlit as st
 from langchain_openai import ChatOpenAI
 import os
@@ -7,6 +8,7 @@ from langchain_core.runnables import RunnableBranch, RunnablePassthrough
 import sys
 sys.path.append("notebook/C3 搭建知识库") # 将父目录放入系统路径中
 from zhipuai_embedding import ZhipuAIEmbeddings
+from zhipuai_llm import ZhipuaiLLM
 from langchain_community.vectorstores import Chroma
 
 def get_retriever():
@@ -26,7 +28,11 @@ def combine_docs(docs):
 
 def get_qa_history_chain():
     retriever = get_retriever()
-    llm = ChatOpenAI(model_name="gpt-4o", temperature=0)
+    
+    # llm = ChatOpenAI(model_name="gpt-4o", temperature=0)
+    api_key = os.environ["ZHIPUAI_API_KEY"]
+    llm = ZhipuaiLLM(model_name="glm-4-plus", temperature=0.1, api_key=api_key)
+
     condense_question_system_template = (
         "请根据聊天记录总结用户最近的问题，"
         "如果没有多余的聊天记录则返回用户的问题。"
@@ -80,7 +86,9 @@ def gen_response(chain, input, chat_history):
 
 # Streamlit 应用程序界面
 def main():
-    st.markdown('### 🦜🔗 动手学大模型应用开发')
+    _ = load_dotenv(find_dotenv())
+
+    st.markdown('### 🤖 问答小助手')
 
     # 用于跟踪对话历史
     if "messages" not in st.session_state:
