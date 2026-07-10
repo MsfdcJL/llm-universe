@@ -103,16 +103,19 @@ class ZhipuaiLLM(BaseChatModel):
                         "total_tokens": res.usage.total_tokens,
                     }
                 )
-            chunk = ChatGenerationChunk(
-                message=AIMessageChunk(content=res.choices[0].delta.content)
-            )
+            
+            if res.choices[0].delta.content is not None:
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(content=res.choices[0].delta.content)
+                )
+                
+                if run_manager:
+                    # This is optional in newer versions of LangChain
+                    # The on_llm_new_token will be called automatically
+                    run_manager.on_llm_new_token(res.choices[0].delta.content, chunk=chunk)
 
-            if run_manager:
-                # This is optional in newer versions of LangChain
-                # The on_llm_new_token will be called automatically
-                run_manager.on_llm_new_token(res.choices[0].delta.content, chunk=chunk)
-
-            yield chunk
+                yield chunk
+            
         time_in_sec = time.time() - start_time
         # Let's add some other information (e.g., response metadata)
         chunk = ChatGenerationChunk(
